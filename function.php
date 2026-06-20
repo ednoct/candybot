@@ -599,7 +599,7 @@ function StatusPayment($paymentid)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 20,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'GET',
@@ -1596,6 +1596,9 @@ function verifpay($id)
 function createInvoiceTetra($amount, $id_invoice)
 {
     global $domainhosts;
+    $callbackHost = trim((string) $domainhosts);
+    $callbackHost = preg_replace('/^https?:\/\//i', '', $callbackHost);
+    $callbackHost = rtrim($callbackHost, '/');
     $PaySetting = select("PaySetting", "ValuePay", "NamePay", "apitetra", "select")['ValuePay'];
     $curl = curl_init();
     $amount = intval($amount);
@@ -1604,16 +1607,16 @@ function createInvoiceTetra($amount, $id_invoice)
         "Hash_id" => $id_invoice,
         "Amount" => $amount,
         "Description" => "CandyBot order " . $id_invoice,
-        "Email" => "customer@" . $domainhosts,
+        "Email" => "customer@" . $callbackHost,
         "Mobile" => "09120000000",
-        "CallbackURL" => "https://$domainhosts/payment/tetra.php"
+        "CallbackURL" => "https://{$callbackHost}/payment/tetra.php"
     ];
     curl_setopt_array($curl, array(
         CURLOPT_URL => "https://tetra98.com/api/create_order",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
+        CURLOPT_TIMEOUT => 20,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
