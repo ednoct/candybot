@@ -259,6 +259,7 @@ if (in_array($text, $textadmin) || $datain == "admin") {
             $status_var = [
                 'cart to cart' => $textbotlang['textbot']['cartToCart'],
                 'tetra payment' => $textbotlang['textbot']['tetraPayment'],
+                'Tetra98' => $textbotlang['textbot']['tetraPayment'],
                 'aqayepardakht' => $textbotlang['textbot']['aqayePardakht'],
                 'zarinpal' => $textbotlang['textbot']['zarinPal'],
                 'plisio' => $textbotlang['textbot']['nowPayment'],
@@ -3449,9 +3450,18 @@ elseif ($datain == "systemsms") {
     $currentApi = $PaySetting ?: "تنظیم نشده";
     
     // ارسال پیام برای دریافت API جدید
-    $texttetra = sprintf($textbotlang['Admin']['adminphp']['ask_send_api'] ?? "لطفا ApiKey درگاه Tetra98 خود را ارسال کنید:\n\n🔑 کلید فعلی: %s", $currentApi);
+    $texttetra = sprintf($textbotlang['Admin']['adminphp']['ask_send_tetra_api'] ?? "لطفا ApiKey درگاه Tetra98 خود را ارسال کنید:\n\n🔑 کلید فعلی: %s", $currentApi);
     sendmessage($from_id, $texttetra, $backadmin, 'HTML');
     step('set_apitetra', $from_id);
+} elseif ($user['step'] == "set_apitetra" && $adminrulecheck['rule'] == "administrator") {
+    $apiKey = trim($text);
+    if ($apiKey === '' || mb_strlen($apiKey) < 8) {
+        sendmessage($from_id, $textbotlang['Admin']['adminphp']['err_invalid_api_key'] ?? '❌ کلید API معتبر نیست.', $backadmin, 'HTML');
+        return;
+    }
+    update("PaySetting", "ValuePay", $apiKey, "NamePay", "apitetra");
+    sendmessage($from_id, $textbotlang['Admin']['SettingnowPayment']['saveApi'], $tetrakeyboard, 'HTML');
+    step('home', $from_id);
 } elseif ($datain == "plisiosetting" && $adminrulecheck['rule'] == "administrator") {
     sendmessage($from_id, $textbotlang['users']['selectoption'], $NowPaymentsManage, 'HTML');
 } elseif ($text == "🧩 api plisio" && $adminrulecheck['rule'] == "administrator") {

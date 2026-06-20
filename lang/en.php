@@ -706,6 +706,8 @@ User\'s balance before purchase: %s
                         'btn_date_must' => 'The date must be valid',
                         'ask_send_date' => 'Send the end date, for example:
 <code>2025/09/08</code>',
+                        'ask_send_tetra_api' => 'Please send your Tetra98 gateway ApiKey:\n\n🔑 Current key: %s',
+                        'err_invalid_api_key' => '❌ The entered API key is not valid.',
                         'ask_send_token' => '📌 Send the token',
                         'err_panel_manage_link_domain' => '❌ Note:
 To activate the panel, you must go to the panel management menu and be sure to configure the Set Inbound ID and Subscription Link Domain options; otherwise, the config will not be created',

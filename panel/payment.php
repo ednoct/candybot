@@ -61,6 +61,8 @@ $methodMap = [
   'arze digital offline' => $textbotlang['panel']['paymentMethodCryptoOffline'],
   'Star Telegram' => $textbotlang['panel']['paymentMethodTelegramStar'],
   'nowpayment' => 'NowPayment',
+  'Tetra98' => $textbotlang['textbot']['tetraPayment'] ?? 'Tetra98',
+  'tetra payment' => $textbotlang['textbot']['tetraPayment'] ?? 'Tetra98',
 ];
 
 $pageTitle = $textbotlang['panel']['paymentTransactionsTitle'];
