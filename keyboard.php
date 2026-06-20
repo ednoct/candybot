@@ -47,7 +47,30 @@ $keyboardRows = [];
 if (is_array($keyboardLayout) && isset($keyboardLayout['keyboard']) && is_array($keyboardLayout['keyboard'])) {
     $keyboardRows = $keyboardLayout['keyboard'];
 }
+if ($admin_idss != 0) {
+    $temp_addtional_key[] = ['text' => $textbotlang['Admin']['panelAdmin'], 'callback_data' => "admin"];
+}
+if ($users['agent'] != "f") {
+    $temp_addtional_key[] = ['text' => $textbotlang['textbot']['agentPanel'], 'callback_data' => "agentpanel"];
+}
+if ($users['agent'] == "f" && $setting['statusagentrequest'] == "onrequestagent") {
+    $temp_addtional_key[] = ['text' => $textbotlang['textbot']['requestAgent'], 'callback_data' => "requestagent"];
+}
 
+$keyboard = json_encode([
+    'keyboard' => json_decode(strtr(strval(json_encode($keyboardRows)), $replacements), true) ?: [],
+    'resize_keyboard' => true
+]);
+if (!empty($temp_addtional_key)) {
+    $replyKeyboardRows = json_decode($keyboard, true)['keyboard'];
+    $replyKeyboardRows[] = array_map(function ($button) {
+        return ['text' => $button['text']];
+    }, $temp_addtional_key);
+    $keyboard = json_encode([
+        'keyboard' => $replyKeyboardRows,
+        'resize_keyboard' => true
+    ]);
+}
 if ($setting['inlinebtnmain'] == "oninline" && !empty($keyboardRows)) {
     $trace_keyboard = $keyboardRows;
     foreach ($trace_keyboard as $key => $callback_set) {
@@ -121,15 +144,6 @@ if ($setting['inlinebtnmain'] == "oninline" && !empty($keyboardRows)) {
     $replacements['custom_url_tutorials'] = '📚 آموزش‌ها';
     $replacements['custom_url_downloads'] = '⬇️ دانلودها';
 
-    if ($admin_idss != 0) {
-        $temp_addtional_key[] = ['text' => $textbotlang['Admin']['panelAdmin'], 'callback_data' => "admin"];
-    }
-    if ($users['agent'] != "f") {
-        $temp_addtional_key[] = ['text' => $textbotlang['textbot']['agentPanel'], 'callback_data' => "agentpanel"];
-    }
-    if ($users['agent'] == "f" && $setting['statusagentrequest'] == "onrequestagent") {
-        $temp_addtional_key[] = ['text' => $textbotlang['textbot']['requestAgent'], 'callback_data' => "requestagent"];
-    }
     $keyboard = ['inline_keyboard' => []];
     $keyboardcustom = $trace_keyboard;
     $keyboardcustom = json_decode(strtr(strval(json_encode($keyboardcustom)), $replacements), true);
