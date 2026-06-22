@@ -1604,39 +1604,48 @@ function verifpay($id)
 function createInvoiceTetra($amount, $id_invoice)
 {
     global $domainhosts;
+    
+    // 1. Fetch API Key from Database
+    $apiKey = trim((string) getPaySettingValue("apitetra", ""));
+    if ($apiKey === "" || $apiKey === "0") {
+        error_log('[Tetra98] API Key not configured');
+        return [
+            'status' => 0,
+            'message' => 'Tetra98 API Key is not configured'
+        ];
+    }
+
+    // Prepare callback URL
     $callbackHost = trim((string) $domainhosts);
     $callbackHost = preg_replace('/^https?:\/\//i', '', $callbackHost);
     $callbackHost = rtrim($callbackHost, '/');
     
-    // 1. Fetch API Key from Database
-    $PaySetting = trim((string) getPaySettingValue("apitetra", ""));
-    if ($PaySetting === "" || $PaySetting === "0") {
+    if (empty($callbackHost)) {
+        error_log('[Tetra98] Invalid callback host: ' . $domainhosts);
         return [
-            'status' => -1,
-            'message' => 'Tetra98 ApiKey is not configured'
+            'status' => 0,
+            'message' => 'Invalid callback URL domain'
         ];
     }
 
-    $curl = curl_init();
-    $amount = intval($amount) * 10;
-    
-    // 2. Prepare Request Data (NO ApiKey in body)
+    // 2. Prepare Request Payload with ApiKey INCLUDED
+    $amount = intval($amount) * 10;  // Multiply by 10 as per your requirement
     $data = [
-        "Hash_id" => $id_invoice,
-        "Amount" => $amount,
-        "CallbackURL" => "https://{$callbackHost}/payment/tetra.php"
+        "api_key" => $apiKey,           // ← ApiKey MUST be in the payload
+        "invoice_id" => $id_invoice,    // Tetra98 might use this field name instead of Hash_id
+        "amount" => $amount,
+        "callback_url" => "https://{$callbackHost}/payment/tetra.php"  // snake_case
     ];
     
-    // 3. Build Headers with API Key (correct placement)
+    // 3. Build Headers (simpler without Authorization header)
     $headers = [
-        'Accept: application/json',
         'Content-Type: application/json',
-        'Authorization: ' . $PaySetting  // ← API Key goes in header
+        'Accept: application/json'
     ];
     
     // DEBUG: Log masked API key and payload before request
-    $maskedApiKey = substr($PaySetting, 0, 4) . '...' . substr($PaySetting, -4);
-    error_log('[Tetra98] DEBUG create_order request: ' . json_encode([
+    $maskedApiKey = substr($apiKey, 0, 4) . '...' . substr($apiKey, -4);
+    error_log('[Tetra98] CREATE ORDER REQUEST: ' . json_encode([
         'url' => 'https://tetra98.com/api/create_order',
         'method' => 'POST',
         'api_key_masked' => $maskedApiKey,
@@ -1645,7 +1654,9 @@ function createInvoiceTetra($amount, $id_invoice)
         'timestamp' => date('Y-m-d H:i:s')
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     
-    curl_setopt_array($curl, array(
+    // 4. Execute cURL Request
+    $curl = curl_init();
+    curl_setopt_array($curl, [
         CURLOPT_URL => "https://tetra98.com/api/create_order",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
@@ -1656,37 +1667,35 @@ function createInvoiceTetra($amount, $id_invoice)
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode($data),
         CURLOPT_HTTPHEADER => $headers
-    ));
+    ]);
 
     $response = curl_exec($curl);
     $curlError = curl_error($curl);
     $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
     
     if ($response === false) {
-        curl_close($curl);
-        error_log('[Tetra98] create_order curl failed: ' . $curlError);
+        error_log('[Tetra98] cURL error: ' . $curlError);
         return [
-            'status' => -1,
-            'message' => $curlError ?: 'Tetra98 create_order request failed'
+            'status' => 0,
+            'message' => 'Request failed: ' . ($curlError ?: 'Unknown error')
         ];
     }
     
-    curl_close($curl);
-    
-    // 4. Log Full Response
-    error_log('[Tetra98] create_order response: ' . json_encode([
+    // 5. Parse and Log Response
+    error_log('[Tetra98] API RESPONSE: ' . json_encode([
         'http_code' => $httpCode,
-        'hash_id' => $id_invoice,
+        'invoice_id' => $id_invoice,
         'amount' => $amount,
-        'body' => $response,
+        'response_body' => $response
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     
     $decodedResponse = json_decode($response, true);
     if (!is_array($decodedResponse)) {
-        error_log('[Tetra98] create_order invalid JSON: ' . $response);
+        error_log('[Tetra98] Invalid JSON response: ' . $response);
         return [
-            'status' => -1,
-            'message' => 'Invalid Tetra98 create_order response'
+            'status' => 0,
+            'message' => 'Invalid API response'
         ];
     }
     
