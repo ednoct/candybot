@@ -4959,8 +4959,9 @@ if ($user['step'] == "createusertest" || preg_match('/locationtest_(.*)/', $data
         $Payment_Method = "Tetra98";
         $stmt->execute([$from_id, $randomString, $dateacc, $user['Processing_value'], $payment_Status, $Payment_Method, $invoice]);
         $pay = createInvoiceTetra($user['Processing_value'], $randomString);
-        if ($pay['status'] != "100") {
-            $text_error = $pay['message'];
+        $authority = is_array($pay) ? ($pay['Authority'] ?? $pay['authority'] ?? null) : null;
+        if (!is_array($pay) || (string) ($pay['status'] ?? '') !== "100" || empty($authority)) {
+            $text_error = $pay['message'] ?? 'Tetra98 did not return a successful create_order response or Authority';
             sendmessage($from_id, $textbotlang['users']['Balance']['errorLinkPayment'], $keyboard, 'HTML');
             step('home', $from_id);
             $ErrorsLinkPayment = sprintf($textbotlang['hardcoded']['paymentLinkErrorAdmin'], $text_error, $from_id, $Payment_Method, $username);
